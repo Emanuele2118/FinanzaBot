@@ -62,18 +62,22 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Legge i valori direttamente dalla scheda Dashboard
-        # In base al tuo screenshot:
-        # Totale Guadagno (Vendite) è in B4
-        # Totale Uscite Generale è in B7
-        # Saldo Finale è in B10
+        # Legge i valori direttamente dalle celle della Dashboard
+        tot_guadagno = sheet_dashboard.acell('B4').value or "0"
+        tot_uscite = sheet_dashboard.acell('B7').value or "0"
+        saldo_finale = sheet_dashboard.acell('B10').value or "0"
         
-        tot_guadagno = sheet_dashboard.acell('B4').value
-        tot_uscite = sheet_dashboard.acell('B7').value
-        saldo_finale = sheet_dashboard.acell('B10').value
-        
-        # Calcoliamo il 30% per gli sfizi basandoci sul saldo letto dal foglio (convertendolo in numero)
-        saldo_num = float(str(saldo_finale).replace(',', '.')) if saldo_finale else 0.0
+        # Funzione di pulizia per convertire in numero
+        def pulisci_numero(valore):
+            if not valore:
+                return 0.0
+            val_str = str(valore).replace('€', '').replace(' ', '').replace(',', '.')
+            try:
+                return float(val_str)
+            except ValueError:
+                return 0.0
+
+        saldo_num = pulisci_numero(saldo_finale)
         sfizi = saldo_num * 0.30
 
         await update.message.reply_text(
@@ -94,5 +98,5 @@ if __name__ == '__main__':
         app.add_handler(CommandHandler("spesa", spesa))
         app.add_handler(CommandHandler("vendita", vendita))
         app.add_handler(CommandHandler("bilancio", bilancio))
-        print("🤖 Bot avviato correttamente con Dashboard e Vendite!")
+        print("🤖 Bot avviato correttamente!")
         app.run_polling()
