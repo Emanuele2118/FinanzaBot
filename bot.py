@@ -62,12 +62,12 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Legge i valori direttamente dalle celle della Dashboard
-        tot_guadagno = sheet_dashboard.acell('B4').value or "0"
-        tot_uscite = sheet_dashboard.acell('B7').value or "0"
-        saldo_finale = sheet_dashboard.acell('B10').value or "0"
+        # Legge le celle forzando il recupero del valore calcolato dalle formule
+        tot_guadagno = sheet_dashboard.acell('B4', value_render_option='FORMATTED_VALUE').value or "0"
+        tot_uscite = sheet_dashboard.acell('B7', value_render_option='FORMATTED_VALUE').value or "0"
+        saldo_finale = sheet_dashboard.acell('B10', value_render_option='FORMATTED_VALUE').value or "0"
         
-        # Funzione di pulizia per convertire in numero
+        # Funzione per pulire il valore e trasformarlo in numero per il calcolo del 30%
         def pulisci_numero(valore):
             if not valore:
                 return 0.0
