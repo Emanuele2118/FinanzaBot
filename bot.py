@@ -22,21 +22,32 @@ sheet = sh.worksheet(WORKSHEET_NAME)
 
 async def spesa(update, context):
     try:
+        # Controlla se hai scritto almeno l'importo
         if not context.args:
-            await update.message.reply_text("Uso: /spesa [importo]")
+            await update.message.reply_text("Uso corretto: /spesa [importo] [nome prodotto]\nEsempio: /spesa 10 Caffè e cornetto")
             return
 
+        # Prende il primo argomento come importo
         importo_str = context.args[0].replace(',', '.')
         importo = float(importo_str)
+        
+        # Prende tutto quello che scrivi dopo l'importo e lo unisce come nome del prodotto
+        # Se non scrivi nulla dopo l'importo, mette "Spesa Telegram" come fallback
+        if len(context.args) > 1:
+            prodotto = " ".join(context.args[1:])
+        else:
+            prodotto = "Spesa Telegram"
+
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Aggiunge semplicemente una nuova riga in fondo con i dati essenziali.
-        # Lasciando gestire alle tue formule e menu a tendina il resto dei calcoli!
-        row = [data, 'Spesa', 'Telegram', importo]
+        # Inserisce in fondo al foglio sfruttando le tue formule automatiche
+        row = [data, 'Spesa', prodotto, importo]
         
         sheet.append_row(row)
         
-        await update.message.reply_text(f"✅ Spesa di {importo}€ registrata con successo!")
+        await update.message.reply_text(f"✅ Registrato: {importo}€ ({prodotto})!")
+    except ValueError:
+        await update.message.reply_text("❌ L'importo inserito non è valido. Usa i numeri (es. /spesa 12.50)")
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante la scrittura: {str(e)}")
 
