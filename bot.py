@@ -17,9 +17,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 sh = client.open(SHEET_NAME)
 
-# Schede
 sheet_flussi = sh.worksheet('Flussi di Cassa')
-sheet_dashboard = sh.worksheet('Dashboard')
 
 async def registra(update, context, categoria):
     try:
@@ -37,7 +35,7 @@ async def registra(update, context, categoria):
 
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Cerca la prima riga libera nella colonna C di 'Flussi di Cassa'
+        # Cerca la prima riga libera nella colonna C
         colonna_prodotti = sheet_flussi.col_values(3)
         prossima_riga = 2
         while prossima_riga <= len(colonna_prodotti):
@@ -62,33 +60,38 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Legge le celle forzando il recupero del valore calcolato dalle formule
-        tot_guadagno = sheet_dashboard.acell('B4', value_render_option='FORMATTED_VALUE').value or "0"
-        tot_uscite = sheet_dashboard.acell('B7', value_render_option='FORMATTED_VALUE').value or "0"
-        saldo_finale = sheet_dashboard.acell('B10', value_render_option='FORMATTED_VALUE').value or "0"
+        # Legge tutti i valori dal foglio Flussi di Cassa
+        righe = sheet_flussi.get_all_values()
         
-        # Funzione per pulire il valore e trasformarlo in numero per il calcolo del 30%
-        def pulisci_numero(valore):
-            if not valore:
-                return 0.0
-            val_str = str(valore).replace('€', '').replace(' ', '').replace(',', '.')
-            try:
-                return float(val_str)
-            except ValueError:
-                return 0.0
-
-        saldo_num = pulisci_numero(saldo_finale)
-        sfizi = saldo_num * 0.30
+        tot_guadagno = 0.0
+        tot_uscite = 0.0
+        
+        # Scorre le righe saltando l'intestazione (parte da riga 1 in poi)
+        for r in righe[1:]:
+            if len(r) >= 4 and r[3].strip() != "":
+                try:
+                    importo = float(r[3].replace(',', '.'))
+                    categoria = r[1].strip().lower()
+                    
+                    if categoria == "vendita":
+                        tot_guadagno += importo
+                    elif categoria == "spesa":
+                        tot_uscite += importo
+                except ValueError:
+                    continue
+                    
+        saldo_finale = tot_guadagno - tot_uscite
+        sfizi = saldo_finale * 0.30
 
         await update.message.reply_text(
-            f"📊 **Dashboard Finanziaria**\n\n"
-            f"🟢 Totale Guadagno: {tot_guadagno}€\n"
-            f"🔴 Totale Uscite: {tot_uscite}€\n"
-            f"💰 Saldo Finale: {saldo_finale}€\n\n"
+            f"📊 **Bilancio Calcolato dal Bot**\n\n"
+            f"🟢 Totale Guadagno: {tot_guadagno:.2f}€\n"
+            f"🔴 Totale Uscite: {tot_uscite:.2f}€\n"
+            f"💰 Saldo Finale: {saldo_finale:.2f}€\n\n"
             f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore nella lettura della Dashboard: {str(e)}")
+        await update.message.reply_text(f"❌ Errore nel calcolo del bilancio: {str(e)}")
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN or not CREDS_JSON:
