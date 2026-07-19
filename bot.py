@@ -28,31 +28,15 @@ async def spesa(update, context):
 
         importo_str = context.args[0].replace(',', '.')
         importo = float(importo_str)
+        data = datetime.now().strftime('%d/%m/%Y')
         
-        # Legge tutti i valori della colonna C (Prodotto)
-        colonna_prodotti = sheet.col_values(3)
+        # Aggiunge semplicemente una nuova riga in fondo con i dati essenziali.
+        # Lasciando gestire alle tue formule e menu a tendina il resto dei calcoli!
+        row = [data, 'Spesa', 'Telegram', importo]
         
-        # Cerca la prima riga dove la colonna C è vuota (partendo dall'alto)
-        prossima_riga = 2
-        while prossima_riga <= len(colonna_prodotti):
-            if colonna_prodotti[prossima_riga - 1].strip() == "":
-                break
-            prossima_riga += 1
-            
-        # Dati da scrivere a partire dalla colonna B alla F
-        # (La colonna A viene saltata per lasciare spazio alla tua formula automatica)
-        dati_riga = [
-            'Spesa',    # Colonna B: Categoria
-            'Telegram', # Colonna C: Prodotto
-            importo,    # Colonna D: Prezzo €
-            0,          # Colonna E: Entrata
-            importo     # Colonna F: Uscita
-        ]
+        sheet.append_row(row)
         
-        # Aggiorna esattamente le colonne da B a F della riga libera trovata
-        sheet.update(f'B{prossima_riga}:F{prossima_riga}', [dati_riga])
-        
-        await update.message.reply_text(f"✅ Spesa di {importo}€ registrata correttamente alla riga {prossima_riga}!")
+        await update.message.reply_text(f"✅ Spesa di {importo}€ registrata con successo!")
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante la scrittura: {str(e)}")
 
