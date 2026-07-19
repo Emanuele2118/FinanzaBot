@@ -37,4 +37,5 @@ async def spesa(update, context):
 if __name__ == '__main__':
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("spesa", spesa))
+    print("🤖 Bot avviato su Railway...")
     app.run_polling()
