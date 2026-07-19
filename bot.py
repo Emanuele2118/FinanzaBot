@@ -68,21 +68,22 @@ async def bilancio(update, context):
         print("\n--- DEBUG BILANCIO ---")
         for r in righe[1:]:
             if len(r) >= 4:
-                # Stampiamo quello che legge per capire cosa c'è nelle celle B e D
                 cat = r[1].strip()
                 val = r[3].strip()
-                print(f"Colonna B (Cat): '{cat}' | Colonna D (Val): '{val}'")
                 
                 if val != "":
                     try:
-                        importo = float(val.replace(',', '.'))
-                        # Controlliamo sia minuscolo che maiuscolo senza problemi
+                        # Pulisce la stringa rimuovendo '€', spazi e sostituendo la virgola con il punto
+                        val_pulito = val.replace('€', '').replace(' ', '').replace(',', '.')
+                        importo = float(val_pulito)
+                        
                         cat_lower = cat.lower()
                         if "vendita" in cat_lower:
                             tot_guadagno += importo
                         elif "spesa" in cat_lower:
                             tot_uscite += importo
-                    except ValueError:
+                    except ValueError as e:
+                        print(f"Errore conversione valore '{val}': {e}")
                         continue
                         
         print(f"Totali calcolati -> Guadagni: {tot_guadagno}, Uscite: {tot_uscite}")
