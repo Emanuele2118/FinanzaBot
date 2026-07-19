@@ -35,7 +35,7 @@ async def registra(update, context, categoria):
 
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Cerca la prima riga libera nella colonna C (Prodotti)
+        # Cerca la prima riga libera basandosi sulla colonna C (Prodotti)
         colonna_prodotti = sheet_flussi.col_values(3)
         prossima_riga = 2
         while prossima_riga <= len(colonna_prodotti):
@@ -43,7 +43,7 @@ async def registra(update, context, categoria):
                 break
             prossima_riga += 1
             
-        # Scrive esattamente nella sequenza: [Data, Categoria, Prodotto, Importo] -> Colonne A, B, C, D
+        # Scrive Data (A), Categoria (B), Prodotto (C) e Prezzo (D)
         row = [data, categoria, prodotto, importo]
         sheet_flussi.update(f'A{prossima_riga}:D{prossima_riga}', [row])
         
@@ -54,9 +54,11 @@ async def registra(update, context, categoria):
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def spesa(update, context): 
+    # Mette la categoria con la lettera maiuscola per il foglio, es. "Spesa"
     await registra(update, context, "Spesa")
 
 async def vendita(update, context): 
+    # Mette la categoria con la lettera maiuscola per il foglio, es. "Vendita"
     await registra(update, context, "Vendita")
 
 async def bilancio(update, context):
@@ -65,20 +67,18 @@ async def bilancio(update, context):
         tot_guadagno = 0.0
         tot_uscite = 0.0
         
-        # Scorre tutte le righe saltando l'intestazione
+        # Legge il foglio: colonna B (indice 1) per la categoria, colonna D (indice 3) per il prezzo
         for r in righe[1:]:
             if len(r) >= 4:
-                categoria = r[1].strip().lower()  # Colonna B: Categoria (Vendita o Spesa)
-                importo_raw = r[3].strip()        # Colonna D: Importo
+                categoria = r[1].strip().lower()  # Converte in minuscolo (es. "vendita" o "spesa")
+                importo_raw = r[3].strip()        # Prezzo nella colonna D
                 
                 if importo_raw != "":
                     try:
                         importo = float(importo_raw.replace(',', '.'))
                         
-                        # Se è una vendita, somma ai guadagni
                         if "vendita" in categoria:
                             tot_guadagno += importo
-                        # Se è una spesa, somma alle uscite
                         elif "spesa" in categoria:
                             tot_uscite += importo
                     except ValueError:
