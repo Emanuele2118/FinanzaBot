@@ -35,7 +35,6 @@ async def registra(update, context, categoria):
 
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Cerca la prima riga libera nella colonna C
         colonna_prodotti = sheet_flussi.col_values(3)
         prossima_riga = 2
         while prossima_riga <= len(colonna_prodotti):
@@ -60,31 +59,28 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Prende tutti i valori del foglio
         righe = sheet_flussi.get_all_values()
-        
         tot_guadagno = 0.0
         tot_uscite = 0.0
         
-        # Legge ogni riga saltando la prima (intestazione)
+        print("--- LETTURA RIGHE FOGLIO ---")
         for r in righe[1:]:
-            # Verifichiamo che la riga abbia almeno la colonna B (indice 1) e D (indice 3)
             if len(r) >= 4:
-                categoria = r[1].strip().lower() # Colonna B: Categoria
-                importo_raw = r[3].strip()       # Colonna D: Importo pulito
+                cat = r[1].strip().lower()  # Trasforma in minuscolo per evitare problemi di maiuscole
+                val_raw = r[3].strip()
                 
-                if importo_raw != "":
+                print(f"Riga trovata -> Categoria: '{cat}', Importo: '{val_raw}'")
+                
+                if val_raw != "":
                     try:
-                        # Converte in float gestendo sia punti che virgole
-                        importo = float(importo_raw.replace(',', '.'))
-                        
-                        if "vendita" in categoria:
+                        importo = float(val_raw.replace(',', '.'))
+                        if "vendita" in cat:
                             tot_guadagno += importo
-                        elif "spesa" in categoria:
+                        elif "spesa" in cat:
                             tot_uscite += importo
                     except ValueError:
                         continue
-                    
+                        
         saldo_finale = tot_guadagno - tot_uscite
         sfizi = saldo_finale * 0.30
 
