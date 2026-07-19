@@ -22,30 +22,35 @@ sheet = sh.worksheet(WORKSHEET_NAME)
 
 async def spesa(update, context):
     try:
-        # Controlla se hai scritto almeno l'importo
         if not context.args:
-            await update.message.reply_text("Uso corretto: /spesa [importo] [nome prodotto]\nEsempio: /spesa 10 Caffè e cornetto")
+            await update.message.reply_text("Uso corretto: /spesa [importo] [nome prodotto]\nEsempio: /spesa 10 Caffè")
             return
 
-        # Prende il primo argomento come importo
         importo_str = context.args[0].replace(',', '.')
         importo = float(importo_str)
         
-        # Prende tutto quello che scrivi dopo l'importo e lo unisce come nome del prodotto
-        # Se non scrivi nulla dopo l'importo, mette "Spesa Telegram" come fallback
         if len(context.args) > 1:
             prodotto = " ".join(context.args[1:])
         else:
-            prodotto = "Spesa Telegram"
+            prodotto = "Telegram"
 
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Inserisce in fondo al foglio sfruttando le tue formule automatiche
+        # Legge la colonna C (Prodotto) per trovare la prima riga libera partendo dall'alto
+        colonna_prodotti = sheet.col_values(3)
+        prossima_riga = 2
+        while prossima_riga <= len(colonna_prodotti):
+            if colonna_prodotti[prossima_riga - 1].strip() == "":
+                break
+            prossima_riga += 1
+            
+        # Prepara la riga da inserire
         row = [data, 'Spesa', prodotto, importo]
         
-        sheet.append_row(row)
+        # Scrive esattamente nella prima riga libera trovata in alto (dalla A alla D)
+        sheet.update(f'A{prossima_riga}:D{prossima_riga}', [row])
         
-        await update.message.reply_text(f"✅ Registrato: {importo}€ ({prodotto})!")
+        await update.message.reply_text(f"✅ Registrato: {importo}€ ({prodotto}) alla riga {prossima_riga}!")
     except ValueError:
         await update.message.reply_text("❌ L'importo inserito non è valido. Usa i numeri (es. /spesa 12.50)")
     except Exception as e:
