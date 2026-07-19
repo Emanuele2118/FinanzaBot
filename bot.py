@@ -19,22 +19,23 @@ sh = client.open(SHEET_NAME)
 
 sheet_flussi = sh.worksheet('Flussi di Cassa')
 
-async def registra(update, context, categoria):
+async def registra(update, context, tipo):
     try:
         if not context.args:
-            await update.message.reply_text(f"Uso: /{categoria.lower()} [importo] [prodotto]\nEsempio: /{categoria.lower()} 15 Maglia")
+            await update.message.reply_text(f"Uso: /{tipo.lower()} [importo] [prodotto]\nEsempio: /{tipo.lower()} 15 Maglia")
             return
         
         importo_str = context.args[0].replace(',', '.')
         importo = float(importo_str)
         
         if len(context.args) > 1:
-            prodotto = " ".join(context.args[1:])
+            prodotto = "총" if False else " ".join(context.args[1:]) # Nome prodotto
         else:
             prodotto = "Telegram"
 
         data = datetime.now().strftime('%d/%m/%Y')
         
+        # Trova la prima riga libera controllando la colonna C (Prodotti)
         colonna_prodotti = sheet_flussi.col_values(3)
         prossima_riga = 2
         while prossima_riga <= len(colonna_prodotti):
@@ -42,10 +43,34 @@ async def registra(update, context, categoria):
                 break
             prossima_riga += 1
             
-        row = [data, categoria, prodotto, importo]
-        sheet_flussi.update(f'A{prossima_riga}:D{prossima_riga}', [row])
+        # In base al tipo, mettiamo l'importo nella colonna giusta (E per Entrate/Vendite, F per Uscite/Spese)
+        # Struttura riga: [Data, Tipo, Prodotto, vuota?, Entrata(E), Uscita(F)] o simile. 
+        # Adattiamo l'invio per scriverlo nelle colonne corrette:
+        # Colonna A: Data, Colonna B: Tipo, Colonna C: Prodotto, Colonna E: Entrata, Colonna F: Uscita
         
-        await update.message.reply_text(f"✅ Registrato {categoria}: {importo}€ ({prodotto}) alla riga {prossima_riga}!")
+        if tipo == "Vendita":
+            row_data = {
+                'A': data,
+                'B': tipo,
+                'C': prodotto,
+                'E': importo
+            }
+        else:
+            row_data = {
+                'A': data,
+                'B': tipo,
+                'C': prodotto,
+                'F': importo
+            }
+            
+        # Scrittura mirata nelle singole celle della riga libera
+        sheet_flussi.update(f'A{prossima_riga}', [[row_data['A'], row_data['B'], row_data['C']]])
+        if tipo == "Vendita":
+            sheet_flussi.update(f'E{prossima_riga}', [[importo]])
+        else:
+            sheet_flussi.update(f'F{prossima_riga}', [[importo]])
+        
+        await update.message.reply_text(f"✅ Registrato {tipo}: {importo}€ ({prodotto}) alla riga {prossima_riga}!")
     except ValueError:
         await update.message.reply_text("❌ L'importo non è valido. Usa i numeri (es. 12.50)")
     except Exception as e:
@@ -63,29 +88,26 @@ async def bilancio(update, context):
         tot_guadagno = 0.0
         tot_uscite = 0.0
         
-        print("--- LETTURA RIGHE FOGLIO ---")
+        # Legge la colonna E (indice 4) per le entrate e F (indice 5) per le uscite
         for r in righe[1:]:
-            if len(r) >= 4:
-                cat = r[1].strip().lower()  # Trasforma in minuscolo per evitare problemi di maiuscole
-                val_raw = r[3].strip()
-                
-                print(f"Riga trovata -> Categoria: '{cat}', Importo: '{val_raw}'")
-                
-                if val_raw != "":
-                    try:
-                        importo = float(val_raw.replace(',', '.'))
-                        if "vendita" in cat:
-                            tot_guadagno += importo
-                        elif "spesa" in cat:
-                            tot_uscite += importo
-                    except ValueError:
-                        continue
-                        
+            # Colonna E (Entrate)
+            if len(r) >= 5 and r[4].strip() != "":
+                try:
+                    tot_guadagno += float(r[4].replace(',', '.'))
+                except ValueError:
+                    pass
+            # Colonna F (Uscite)
+            if len(r) >= 6 and r[5].strip() != "":
+                try:
+                    tot_uscite += float(r[5].replace(',', '.'))
+                except ValueError:
+                    pass
+                    
         saldo_finale = tot_guadagno - tot_uscite
         sfizi = saldo_finale * 0.30
 
         await update.message.reply_text(
-            f"📊 **Bilancio Calcolato dal Bot**\n\n"
+            f"📊 **Bilancio Snc**\n\n"
             f"🟢 Totale Guadagno: {tot_guadagno:.2f}€\n"
             f"🔴 Totale Uscite: {tot_uscite:.2f}€\n"
             f"💰 Saldo Finale: {saldo_finale:.2f}€\n\n"
