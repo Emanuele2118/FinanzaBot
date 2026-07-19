@@ -54,11 +54,9 @@ async def registra(update, context, categoria):
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def spesa(update, context): 
-    # Mette la categoria con la lettera maiuscola per il foglio, es. "Spesa"
     await registra(update, context, "Spesa")
 
 async def vendita(update, context): 
-    # Mette la categoria con la lettera maiuscola per il foglio, es. "Vendita"
     await registra(update, context, "Vendita")
 
 async def bilancio(update, context):
@@ -67,23 +65,29 @@ async def bilancio(update, context):
         tot_guadagno = 0.0
         tot_uscite = 0.0
         
-        # Legge il foglio: colonna B (indice 1) per la categoria, colonna D (indice 3) per il prezzo
+        print("\n--- DEBUG BILANCIO ---")
         for r in righe[1:]:
             if len(r) >= 4:
-                categoria = r[1].strip().lower()  # Converte in minuscolo (es. "vendita" o "spesa")
-                importo_raw = r[3].strip()        # Prezzo nella colonna D
+                # Stampiamo quello che legge per capire cosa c'è nelle celle B e D
+                cat = r[1].strip()
+                val = r[3].strip()
+                print(f"Colonna B (Cat): '{cat}' | Colonna D (Val): '{val}'")
                 
-                if importo_raw != "":
+                if val != "":
                     try:
-                        importo = float(importo_raw.replace(',', '.'))
-                        
-                        if "vendita" in categoria:
+                        importo = float(val.replace(',', '.'))
+                        # Controlliamo sia minuscolo che maiuscolo senza problemi
+                        cat_lower = cat.lower()
+                        if "vendita" in cat_lower:
                             tot_guadagno += importo
-                        elif "spesa" in categoria:
+                        elif "spesa" in cat_lower:
                             tot_uscite += importo
                     except ValueError:
                         continue
-                    
+                        
+        print(f"Totali calcolati -> Guadagni: {tot_guadagno}, Uscite: {tot_uscite}")
+        print("----------------------\n")
+
         saldo_finale = tot_guadagno - tot_uscite
         sfizi = saldo_finale * 0.30
 
