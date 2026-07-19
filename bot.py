@@ -28,22 +28,31 @@ async def spesa(update, context):
 
         importo_str = context.args[0].replace(',', '.')
         importo = float(importo_str)
-        data = datetime.now().strftime('%d/%m/%Y')
         
-        # Legge tutti i valori della colonna A (Data) per trovare la prima cella vuota
-        colonna_date = sheet.col_values(1)
+        # Legge tutti i valori della colonna C (Prodotto)
+        colonna_prodotti = sheet.col_values(3)
         
-        # Trova la prima riga libera partendo dall'alto (saltando l'intestazione riga 1)
-        # Se ci sono 17 righe piene, la prima libera sarà la 18.
-        prossima_riga = len(colonna_date) + 1
+        # Cerca la prima riga dove la colonna C è vuota (partendo dall'alto)
+        prossima_riga = 2
+        while prossima_riga <= len(colonna_prodotti):
+            if colonna_prodotti[prossima_riga - 1].strip() == "":
+                break
+            prossima_riga += 1
+            
+        # Dati da scrivere a partire dalla colonna B alla F
+        # (La colonna A viene saltata per lasciare spazio alla tua formula automatica)
+        dati_riga = [
+            'Spesa',    # Colonna B: Categoria
+            'Telegram', # Colonna C: Prodotto
+            importo,    # Colonna D: Prezzo €
+            0,          # Colonna E: Entrata
+            importo     # Colonna F: Uscita
+        ]
         
-        # Dati da inserire nelle colonne A, B, C, D, E, F
-        row = [data, 'Spesa', 'Telegram', importo, 0, importo]
+        # Aggiorna esattamente le colonne da B a F della riga libera trovata
+        sheet.update(f'B{prossima_riga}:F{prossima_riga}', [dati_riga])
         
-        # Aggiorna esattamente la riga vuota trovata, preservando colori e formattazione
-        sheet.update(f'A{prossima_riga}:F{prossima_riga}', [row])
-        
-        await update.message.reply_text(f"✅ Spesa di {importo}€ inserita nella tua riga colorata (Riga {prossima_riga})!")
+        await update.message.reply_text(f"✅ Spesa di {importo}€ registrata correttamente alla riga {prossima_riga}!")
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante la scrittura: {str(e)}")
 
