@@ -60,25 +60,27 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Legge tutti i valori dal foglio Flussi di Cassa
         righe = sheet_flussi.get_all_values()
         
         tot_guadagno = 0.0
         tot_uscite = 0.0
         
-        # Scorre le righe saltando l'intestazione (parte da riga 1 in poi)
+        # Analizziamo tutte le righe saltando la prima (intestazione)
         for r in righe[1:]:
-            if len(r) >= 4 and r[3].strip() != "":
-                try:
-                    importo = float(r[3].replace(',', '.'))
-                    categoria = r[1].strip().lower()
-                    
-                    if categoria == "vendita":
-                        tot_guadagno += importo
-                    elif categoria == "spesa":
-                        tot_uscite += importo
-                except ValueError:
-                    continue
+            # Assicuriamoci che la riga abbia almeno le prime 4 colonne piene (A, B, C, D)
+            if len(r) >= 4:
+                cat = r[1].strip().lower() # Colonna B: Categoria (Spesa o Vendita)
+                val_raw = r[3].strip()     # Colonna D: Importo
+                
+                if val_raw != "":
+                    try:
+                        importo = float(val_raw.replace(',', '.'))
+                        if "vendita" in cat:
+                            tot_guadagno += importo
+                        elif "spesa" in cat:
+                            tot_uscite += importo
+                    except ValueError:
+                        continue
                     
         saldo_finale = tot_guadagno - tot_uscite
         sfizi = saldo_finale * 0.30
