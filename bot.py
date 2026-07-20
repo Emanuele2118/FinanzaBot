@@ -58,7 +58,7 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- COMANDI DASHBOARD ---
+# --- COMANDI DASHBOARD CON DEBUG ---
 
 async def bilancio(update, context):
     try:
@@ -66,8 +66,10 @@ async def bilancio(update, context):
         uscite = sheet_dashboard.acell('B7').value
         saldo = sheet_dashboard.acell('B10').value
         
+        print(f"[DEBUG BILANCIO] B4 (Guadagno): {guadagno}, B7 (Uscite): {uscite}, B10 (Saldo): {saldo}")
+        
         try:
-            sfizi = float(saldo.replace(',', '.')) * 0.30
+            sfizi = float(str(saldo).replace(',', '.')) * 0.30
         except:
             sfizi = 0.0
 
@@ -79,6 +81,7 @@ async def bilancio(update, context):
             f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
+        print(f"[ERRORE BILANCIO]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def performance(update, context):
@@ -87,6 +90,8 @@ async def performance(update, context):
         investimenti = sheet_dashboard.acell('D7').value
         spese = sheet_dashboard.acell('D10').value
 
+        print(f"[DEBUG PERFORMANCE] D4 (Vendite): {vendite}, D7 (Investimenti): {investimenti}, D10 (Spese): {spese}")
+
         await update.message.reply_text(
             f"📈 **Performance Attività**\n\n"
             f"• Totale Vendite: {vendite}€\n"
@@ -94,6 +99,7 @@ async def performance(update, context):
             f"• Totale Spese: {spese}€"
         )
     except Exception as e:
+        print(f"[ERRORE PERFORMANCE]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def analisi(update, context):
@@ -101,12 +107,15 @@ async def analisi(update, context):
         tasso = sheet_dashboard.acell('H4').value
         netto = sheet_dashboard.acell('H7').value
 
+        print(f"[DEBUG ANALISI] H4 (Tasso): {tasso}, H7 (Netto): {netto}")
+
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
             f"• Tasso di Efficienza: {tasso}\n"
             f"• Guadagno Netto: {netto}€"
         )
     except Exception as e:
+        print(f"[ERRORE ANALISI]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def settimana(update, context):
