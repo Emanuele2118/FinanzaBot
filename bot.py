@@ -18,8 +18,6 @@ client = gspread.authorize(creds)
 sh = client.open(SHEET_NAME)
 
 sheet_flussi = sh.worksheet('Flussi di Cassa')
-# Apriamo anche il foglio della Dashboard per leggere i totali riassuntivi
-sheet_dashboard = sh.worksheet('Dashboard')
 
 async def registra(update, context, categoria):
     try:
@@ -37,7 +35,6 @@ async def registra(update, context, categoria):
 
         data = datetime.now().strftime('%d/%m/%Y')
         
-        # Cerca la prima riga libera basandosi sulla colonna C (Prodotti)
         colonna_prodotti = sheet_flussi.col_values(3)
         prossima_riga = 2
         while prossima_riga <= len(colonna_prodotti):
@@ -45,7 +42,6 @@ async def registra(update, context, categoria):
                 break
             prossima_riga += 1
             
-        # Scrive Data (A), Categoria (B), Prodotto (C) e Prezzo (D)
         row = [data, categoria, prodotto, importo]
         sheet_flussi.update(f'A{prossima_riga}:D{prossima_riga}', [row])
         
@@ -63,45 +59,37 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        # Legge direttamente i valori formattati e calcolati dal foglio Dashboard
-        tot_guadagno = sheet_dashboard.acell('B4').value
-        tot_uscite = sheet_dashboard.acell('B6').value
-        saldo_finale = sheet_dashboard.acell('B10').value
+        righe = sheet_flussi.get_all_values()
+        tot_guadagno = 0.0
+        tot_uscite = 0.0
         
-        tot_vendite = sheet_dashboard.acell('D4').value
-        tot_investimenti = sheet_dashboard.acell('D6').value
-        tot_spese = sheet_dashboard.acell('D10').value
-        
-        tasso_efficienza = sheet_dashboard.acell('H4').value
-        guadagno_netto = sheet_dashboard.acell('H7').value
-        
-        v_settimana = sheet_dashboard.acell('B14').value
-        s_settimana = sheet_dashboard.acell('D14').value
-        i_settimana = sheet_dashboard.acell('F14').value
-        
-        v_mese = sheet_dashboard.acell('B16').value
-        s_mese = sheet_dashboard.acell('D16').value
-        i_mese = sheet_dashboard.acell('F16').value
+        for r in righe[1:]:
+            if len(r) >= 4:
+                cat = r[1].strip().lower()
+                val = r[3].strip()
+                if val != "":
+                    try:
+                        val_pulito = val.replace('€', '').replace(' ', '').replace(',', '.')
+                        importo = float(val_pulito)
+                        if "vendita" in cat:
+                            tot_guadagno += importo
+                        elif "spesa" in cat:
+                            tot_uscite += importo
+                    except ValueError:
+                        continue
+                        
+        saldo_finale = tot_guadagno - tot_uscite
+        sfizi = saldo_finale * 0.30
 
         await update.message.reply_text(
-            f"📊 **Dashboard & Risultato Economico**\n\n"
-            f"🟢 **Totale Guadagno:** {tot_guadagno}\n"
-            f"🔴 **Uscite Generali:** {tot_uscite}\n"
-            f"💰 **Saldo Finale:** {saldo_finale}\n\n"
-            f"📈 **Performance Attività**\n"
-            f"• Totale Vendite: {tot_vendite}\n"
-            f"• Totale Investimenti: {tot_investimenti}\n"
-            f"• Totale Spese: {tot_spese}\n\n"
-            f"🔍 **Analisi**\n"
-            f"• Tasso di Efficienza: {tasso_efficienza}\n"
-            f"• Guadagno Netto: {guadagno_netto}\n\n"
-            f"📅 **Periodo (Settimana)**\n"
-            f"• Vendite: {v_settimana} | Spese: {s_settimana} | Inv: {i_settimana}\n\n"
-            f"📆 **Periodo (Mese)**\n"
-            f"• Vendite: {v_mese} | Spese: {s_mese} | Inv: {i_mese}"
+            f"📊 **Bilancio Snc**\n\n"
+            f"🟢 Totale Guadagno: {tot_guadagno:.2f}€\n"
+            f"🔴 Totale Uscite: {tot_uscite:.2f}€\n"
+            f"💰 Saldo Finale: {saldo_finale:.2f}€\n\n"
+            f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore nel recupero della Dashboard: {str(e)}")
+        await update.message.reply_text(f"❌ Errore nel calcolo del bilancio: {str(e)}")
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN or not CREDS_JSON:
