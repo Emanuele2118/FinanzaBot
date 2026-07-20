@@ -58,18 +58,19 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- COMANDI DASHBOARD CON DEBUG ---
+# --- COMANDI DASHBOARD (LEGCONO I RISULTATI DELLE FORMULE) ---
 
 async def bilancio(update, context):
     try:
-        guadagno = sheet_dashboard.acell('B4').value
-        uscite = sheet_dashboard.acell('B7').value
-        saldo = sheet_dashboard.acell('B10').value
+        # get_all_values con value_render_option='FORMATTED_VALUE' legge il risultato calcolato dalla formula
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        print(f"[DEBUG BILANCIO] B4 (Guadagno): {guadagno}, B7 (Uscite): {uscite}, B10 (Saldo): {saldo}")
+        guadagno = valori[3][1]  # B4
+        uscite = valori[6][1]    # B7
+        saldo = valori[9][1]     # B10
         
         try:
-            sfizi = float(str(saldo).replace(',', '.')) * 0.30
+            sfizi = float(str(saldo).replace('€', '').replace(' ', '').replace(',', '.')) * 0.30
         except:
             sfizi = 0.0
 
@@ -81,16 +82,15 @@ async def bilancio(update, context):
             f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
-        print(f"[ERRORE BILANCIO]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def performance(update, context):
     try:
-        vendite = sheet_dashboard.acell('D4').value
-        investimenti = sheet_dashboard.acell('D7').value
-        spese = sheet_dashboard.acell('D10').value
-
-        print(f"[DEBUG PERFORMANCE] D4 (Vendite): {vendite}, D7 (Investimenti): {investimenti}, D10 (Spese): {spese}")
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        
+        vendite = valori[3][3]       # D4
+        investimenti = valori[6][3]  # D7
+        spese = valori[9][3]         # D10
 
         await update.message.reply_text(
             f"📈 **Performance Attività**\n\n"
@@ -99,15 +99,14 @@ async def performance(update, context):
             f"• Totale Spese: {spese}€"
         )
     except Exception as e:
-        print(f"[ERRORE PERFORMANCE]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def analisi(update, context):
     try:
-        tasso = sheet_dashboard.acell('H4').value
-        netto = sheet_dashboard.acell('H7').value
-
-        print(f"[DEBUG ANALISI] H4 (Tasso): {tasso}, H7 (Netto): {netto}")
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        
+        tasso = valori[3][7]  # H4
+        netto = valori[6][7]  # H7
 
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
@@ -115,14 +114,15 @@ async def analisi(update, context):
             f"• Guadagno Netto: {netto}€"
         )
     except Exception as e:
-        print(f"[ERRORE ANALISI]: {str(e)}")
         await update.message.reply_text(f"❌ Errore: {str(e)}")
 
 async def settimana(update, context):
     try:
-        v_sett = sheet_dashboard.acell('B14').value
-        s_sett = sheet_dashboard.acell('D14').value
-        i_sett = sheet_dashboard.acell('F14').value
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        
+        v_sett = valori[13][1]  # B14
+        s_sett = valori[13][3]  # D14
+        i_sett = valori[13][5]  # F14
 
         await update.message.reply_text(
             f"📅 **Dati Settimanali**\n\n"
@@ -135,9 +135,11 @@ async def settimana(update, context):
 
 async def mese(update, context):
     try:
-        v_mese = sheet_dashboard.acell('B17').value
-        s_mese = sheet_dashboard.acell('D17').value
-        i_mese = sheet_dashboard.acell('F17').value
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        
+        v_mese = valori[16][1]  # B17
+        s_mese = valori[16][3]  # D17
+        i_mese = valori[16][5]  # F17
 
         await update.message.reply_text(
             f"📆 **Dati Mensili**\n\n"
