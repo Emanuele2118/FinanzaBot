@@ -59,7 +59,6 @@ async def bilancio(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        # Colonna A: A4 (Guadagno), A7 (Uscite), A10 (Saldo)
         guadagno = valori[3][0] if len(valori) > 3 and len(valori[3]) > 0 else "0"
         uscite = valori[6][0] if len(valori) > 6 and len(valori[6]) > 0 else "0"
         saldo = valori[9][0] if len(valori) > 9 and len(valori[9]) > 0 else "0"
@@ -98,9 +97,16 @@ async def performance(update, context):
 
 async def analisi(update, context):
     try:
-        # Lettura mirata delle celle H4 (Tasso di Efficienza) e H7 (Guadagno Netto)
-        tasso = sheet_dashboard.acell('H4', value_render_option='FORMATTED_VALUE').value
-        netto = sheet_dashboard.acell('H7', value_render_option='FORMATTED_VALUE').value
+        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        
+        tasso = "N/D"
+        netto = "N/D"
+        
+        if len(valori) > 3:
+            tasso = valori[3][7] if len(valori[3]) > 7 and valori[3][7] != "" else (valori[3][6] if len(valori[3]) > 6 else "N/D")
+            
+        if len(valori) > 6:
+            netto = valori[6][7] if len(valori[6]) > 7 and valori[6][7] != "" else (valori[6][6] if len(valori[6]) > 6 else "N/D")
 
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
