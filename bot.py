@@ -53,19 +53,18 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- COMANDI DASHBOARD AGGIORNATI ---
+# --- COMANDI DASHBOARD CORRETTI ---
 
 async def bilancio(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        # Leggiamo dalle celle corrette (verificate dai log)
-        guadagno = valori[3][1] if len(valori) > 3 and len(valori[3]) > 1 else "0"
-        uscite = valori[6][1] if len(valori) > 6 and len(valori[6]) > 1 else "0"
-        saldo = valori[9][1] if len(valori) > 9 and len(valori[9]) > 1 else "0"
+        # Colonna A (indice 0): A4, A7, A10
+        guadagno = valori[3][0] if len(valori) > 3 and len(valori[3]) > 0 else "0"
+        uscite = valori[6][0] if len(valori) > 6 and len(valori[6]) > 0 else "0"
+        saldo = valori[9][0] if len(valori) > 9 and len(valori[9]) > 0 else "0"
         
         try:
-            # Calcolo sicuro pulendo il simbolo € se presente
             val_saldo_clean = float(str(saldo).replace('€', '').replace(' ', '').replace(',', '.'))
             sfizi = val_saldo_clean * 0.30
         except:
@@ -101,9 +100,9 @@ async def analisi(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        # Adattato per leggere in modo sicuro (evita l'errore out of range se la colonna è diversa)
-        tasso = valori[3][5] if len(valori) > 3 and len(valori[3]) > 5 else "N/D"
-        netto = valori[6][5] if len(valori) > 6 and len(valori[6]) > 5 else "N/D"
+        # Colonna H (indice 7): H4 e H7
+        tasso = valori[3][7] if len(valori) > 3 and len(valori[3]) > 7 else "N/D"
+        netto = valori[6][7] if len(valori) > 6 and len(valori[6]) > 7 else "N/D"
 
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
