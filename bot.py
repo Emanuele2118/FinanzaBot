@@ -18,6 +18,8 @@ client = gspread.authorize(creds)
 sh = client.open(SHEET_NAME)
 
 sheet_flussi = sh.worksheet('Flussi di Cassa')
+# Apriamo anche il foglio della Dashboard per leggere i totali riassuntivi
+sheet_dashboard = sh.worksheet('Dashboard')
 
 async def registra(update, context, categoria):
     try:
@@ -61,46 +63,45 @@ async def vendita(update, context):
 
 async def bilancio(update, context):
     try:
-        righe = sheet_flussi.get_all_values()
-        tot_guadagno = 0.0
-        tot_uscite = 0.0
+        # Legge direttamente i valori formattati e calcolati dal foglio Dashboard
+        tot_guadagno = sheet_dashboard.acell('B4').value
+        tot_uscite = sheet_dashboard.acell('B6').value
+        saldo_finale = sheet_dashboard.acell('B10').value
         
-        print("\n--- DEBUG BILANCIO ---")
-        for r in righe[1:]:
-            if len(r) >= 4:
-                cat = r[1].strip()
-                val = r[3].strip()
-                
-                if val != "":
-                    try:
-                        # Pulisce la stringa rimuovendo '€', spazi e sostituendo la virgola con il punto
-                        val_pulito = val.replace('€', '').replace(' ', '').replace(',', '.')
-                        importo = float(val_pulito)
-                        
-                        cat_lower = cat.lower()
-                        if "vendita" in cat_lower:
-                            tot_guadagno += importo
-                        elif "spesa" in cat_lower:
-                            tot_uscite += importo
-                    except ValueError as e:
-                        print(f"Errore conversione valore '{val}': {e}")
-                        continue
-                        
-        print(f"Totali calcolati -> Guadagni: {tot_guadagno}, Uscite: {tot_uscite}")
-        print("----------------------\n")
-
-        saldo_finale = tot_guadagno - tot_uscite
-        sfizi = saldo_finale * 0.30
+        tot_vendite = sheet_dashboard.acell('D4').value
+        tot_investimenti = sheet_dashboard.acell('D6').value
+        tot_spese = sheet_dashboard.acell('D10').value
+        
+        tasso_efficienza = sheet_dashboard.acell('H4').value
+        guadagno_netto = sheet_dashboard.acell('H7').value
+        
+        v_settimana = sheet_dashboard.acell('B14').value
+        s_settimana = sheet_dashboard.acell('D14').value
+        i_settimana = sheet_dashboard.acell('F14').value
+        
+        v_mese = sheet_dashboard.acell('B16').value
+        s_mese = sheet_dashboard.acell('D16').value
+        i_mese = sheet_dashboard.acell('F16').value
 
         await update.message.reply_text(
-            f"📊 **Bilancio Snc**\n\n"
-            f"🟢 Totale Guadagno: {tot_guadagno:.2f}€\n"
-            f"🔴 Totale Uscite: {tot_uscite:.2f}€\n"
-            f"💰 Saldo Finale: {saldo_finale:.2f}€\n\n"
-            f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
+            f"📊 **Dashboard & Risultato Economico**\n\n"
+            f"🟢 **Totale Guadagno:** {tot_guadagno}\n"
+            f"🔴 **Uscite Generali:** {tot_uscite}\n"
+            f"💰 **Saldo Finale:** {saldo_finale}\n\n"
+            f"📈 **Performance Attività**\n"
+            f"• Totale Vendite: {tot_vendite}\n"
+            f"• Totale Investimenti: {tot_investimenti}\n"
+            f"• Totale Spese: {tot_spese}\n\n"
+            f"🔍 **Analisi**\n"
+            f"• Tasso di Efficienza: {tasso_efficienza}\n"
+            f"• Guadagno Netto: {guadagno_netto}\n\n"
+            f"📅 **Periodo (Settimana)**\n"
+            f"• Vendite: {v_settimana} | Spese: {s_settimana} | Inv: {i_settimana}\n\n"
+            f"📆 **Periodo (Mese)**\n"
+            f"• Vendite: {v_mese} | Spese: {s_mese} | Inv: {i_mese}"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore nel calcolo del bilancio: {str(e)}")
+        await update.message.reply_text(f"❌ Errore nel recupero della Dashboard: {str(e)}")
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN or not CREDS_JSON:
