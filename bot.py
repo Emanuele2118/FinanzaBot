@@ -18,6 +18,7 @@ client = gspread.authorize(creds)
 sh = client.open(SHEET_NAME)
 
 sheet_flussi = sh.worksheet('Flussi di Cassa')
+sheet_dashboard = sh.worksheet('Dashboard')
 
 async def registra(update, context, categoria):
     try:
@@ -57,39 +58,88 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
+# --- NUOVI COMANDI DEDICATI ---
+
 async def bilancio(update, context):
     try:
-        righe = sheet_flussi.get_all_values()
-        tot_guadagno = 0.0
-        tot_uscite = 0.0
+        guadagno = sheet_dashboard.acell('B4').value
+        uscite = sheet_dashboard.acell('B7').value
+        saldo = sheet_dashboard.acell('B10').value
         
-        for r in righe[1:]:
-            if len(r) >= 4:
-                cat = r[1].strip().lower()
-                val = r[3].strip()
-                if val != "":
-                    try:
-                        val_pulito = val.replace('€', '').replace(' ', '').replace(',', '.')
-                        importo = float(val_pulito)
-                        if "vendita" in cat:
-                            tot_guadagno += importo
-                        elif "spesa" in cat:
-                            tot_uscite += importo
-                    except ValueError:
-                        continue
-                        
-        saldo_finale = tot_guadagno - tot_uscite
-        sfizi = saldo_finale * 0.30
+        # Calcolo opzionale sfizi
+        try:
+            sfizi = float(saldo.replace(',', '.')) * 0.30
+        except:
+            sfizi = 0.0
 
         await update.message.reply_text(
-            f"📊 **Bilancio Snc**\n\n"
-            f"🟢 Totale Guadagno: {tot_guadagno:.2f}€\n"
-            f"🔴 Totale Uscite: {tot_uscite:.2f}€\n"
-            f"💰 Saldo Finale: {saldo_finale:.2f}€\n\n"
+            f"📊 **Risultato Economico**\n\n"
+            f"🟢 Totale Guadagno: {guadagno}€\n"
+            f"🔴 Totale Uscite: {uscite}€\n"
+            f"💰 Saldo Finale: {saldo}€\n\n"
             f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore nel calcolo del bilancio: {str(e)}")
+        await update.message.reply_text(f"❌ Errore: {str(e)}")
+
+async def performance(update, context):
+    try:
+        vendite = sheet_dashboard.acell('D4').value
+        investimenti = sheet_dashboard.acell('D7').value
+        spese = sheet_dashboard.acell('D10').value
+
+        await update.message.reply_text(
+            f"📈 **Performance Attività**\n\n"
+            f"• Totale Vendite: {vendite}€\n"
+            f"• Totale Investimenti: {investimenti}€\n"
+            f"• Totale Spese: {spese}€"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {str(e)}")
+
+async def analisi(update, context):
+    try:
+        tasso = sheet_dashboard.acell('H4').value
+        netto = sheet_dashboard.acell('H7').value
+
+        await update.message.reply_text(
+            f"🔍 **Analisi**\n\n"
+            f"• Tasso di Efficienza: {tasso}\n"
+            f"• Guadagno Netto: {netto}€"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {str(e)}")
+
+async def settimana(update, context):
+    try:
+        v_sett = sheet_dashboard.acell('B14').value
+        s_sett = sheet_dashboard.acell('D14').value
+        i_sett = sheet_dashboard.acell('F14').value
+
+        await update.message.reply_text(
+            f"📅 **Dati Settimanali**\n\n"
+            f"• Vendite Settimana: {v_sett}€\n"
+            f"• Spese Settimana: {s_sett}€\n"
+            f"• Investimenti Settimana: {i_sett}€"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {str(e)}")
+
+async def mese(update, context):
+    try:
+        v_mese = sheet_dashboard.acell('B17').value
+        s_mese = sheet_dashboard.acell('D17').value
+        i_mese = sheet_dashboard.acell('F17').value
+
+        await update.message.reply_text(
+            f"📆 **Dati Mensili**\n\n"
+            f"• Vendite Mese: {v_mese}€\n"
+            f"• Spese Mese: {s_mese}€\n"
+            f"• Investimenti Mese: {i_mese}€"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore: {str(e)}")
+
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN or not CREDS_JSON:
@@ -99,5 +149,10 @@ if __name__ == '__main__':
         app.add_handler(CommandHandler("spesa", spesa))
         app.add_handler(CommandHandler("vendita", vendita))
         app.add_handler(CommandHandler("bilancio", bilancio))
+        app.add_handler(CommandHandler("performance", performance))
+        app.add_handler(CommandHandler("analisi", analisi))
+        app.add_handler(CommandHandler("settimana", settimana))
+        app.add_handler(CommandHandler("mese", mese))
+        
         print("🤖 Bot avviato correttamente!")
         app.run_polling()
