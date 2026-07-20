@@ -53,34 +53,30 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- DEBUG MAPPA DASHBOARD ---
-async def debug_dashboard(update, context):
-    try:
-        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
-        print("\n--- MAPPA COMPLETA DASHBOARD ---")
-        for r_idx, riga in enumerate(valori):
-            print(f"Riga {r_idx + 1} (indice {r_idx}): {riga}")
-        print("---------------------------------\n")
-        await update.message.reply_text("🔍 Mappa della Dashboard stampata nei log di Railway!")
-    except Exception as e:
-        await update.message.reply_text(f"❌ Errore debug: {str(e)}")
-
-# --- COMANDI DASHBOARD ---
+# --- COMANDI DASHBOARD AGGIORNATI ---
 
 async def bilancio(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        # Stampa nei log per sicurezza
-        print(f"[BILANCIO] Righe totali lette: {len(valori)}")
+        # Leggiamo dalle celle corrette (verificate dai log)
+        guadagno = valori[3][1] if len(valori) > 3 and len(valori[3]) > 1 else "0"
+        uscite = valori[6][1] if len(valori) > 6 and len(valori[6]) > 1 else "0"
+        saldo = valori[9][1] if len(valori) > 9 and len(valori[9]) > 1 else "0"
+        
+        try:
+            # Calcolo sicuro pulendo il simbolo € se presente
+            val_saldo_clean = float(str(saldo).replace('€', '').replace(' ', '').replace(',', '.'))
+            sfizi = val_saldo_clean * 0.30
+        except:
+            sfizi = 0.0
 
-        # Tentiamo di leggere in modo flessibile o provvisorio (puoi aggiustare in base ai log)
-        # Usiamo i comandi sicuri basati sulle righe che funzionano già
         await update.message.reply_text(
             f"📊 **Risultato Economico**\n\n"
-            f"🟢 Totale Guadagno: {valori[3][1]}€\n"
-            f"🔴 Totale Uscite: {valori[6][1]}€\n"
-            f"💰 Saldo Finale: {valori[9][1]}€"
+            f"🟢 Totale Guadagno: {guadagno}€\n"
+            f"🔴 Totale Uscite: {uscite}€\n"
+            f"💰 Saldo Finale: {saldo}€\n\n"
+            f"🎯 Budget per sfizi (30%): {sfizi:.2f}€"
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Errore Bilancio: {str(e)}")
@@ -88,11 +84,15 @@ async def bilancio(update, context):
 async def performance(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        vendite = valori[3][3] if len(valori) > 3 and len(valori[3]) > 3 else "0"
+        investimenti = valori[6][3] if len(valori) > 6 and len(valori[6]) > 3 else "0"
+        spese = valori[9][3] if len(valori) > 9 and len(valori[9]) > 3 else "0"
+
         await update.message.reply_text(
             f"📈 **Performance Attività**\n\n"
-            f"• Totale Vendite: {valori[3][3]}€\n"
-            f"• Totale Investimenti: {valori[6][3]}€\n"
-            f"• Totale Spese: {valori[9][3]}€"
+            f"• Totale Vendite: {vendite}€\n"
+            f"• Totale Investimenti: {investimenti}€\n"
+            f"• Totale Spese: {spese}€"
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Errore Performance: {str(e)}")
@@ -100,9 +100,10 @@ async def performance(update, context):
 async def analisi(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
-        # Verifica se la riga e la colonna esistono prima di leggerle
-        tasso = valori[3][7] if len(valori) > 3 and len(valori[3]) > 7 else "N/D"
-        netto = valori[6][7] if len(valori) > 6 and len(valori[6]) > 7 else "N/D"
+        
+        # Adattato per leggere in modo sicuro (evita l'errore out of range se la colonna è diversa)
+        tasso = valori[3][5] if len(valori) > 3 and len(valori[3]) > 5 else "N/D"
+        netto = valori[6][5] if len(valori) > 6 and len(valori[6]) > 5 else "N/D"
 
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
@@ -115,26 +116,34 @@ async def analisi(update, context):
 async def settimana(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        v_sett = valori[13][1] if len(valori) > 13 and len(valori[13]) > 1 else "0"
+        s_sett = valori[13][3] if len(valori) > 13 and len(valori[13]) > 3 else "0"
+        i_sett = valori[13][5] if len(valori) > 13 and len(valori[13]) > 5 else "0"
+
         await update.message.reply_text(
             f"📅 **Dati Settimanali**\n\n"
-            f"• Vendite Settimana: {valori[13][1]}€\n"
-            f"• Spese Settimana: {valori[13][3]}€\n"
-            f"• Investimenti Settimana: {valori[13][5]}€"
+            f"• Vendite Settimana: {v_sett}€\n"
+            f"• Spese Settimana: {s_sett}€\n"
+            f"• Investimenti Settimana: {i_sett}€"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore: {str(e)}")
+        await update.message.reply_text(f"❌ Errore Settimana: {str(e)}")
 
 async def mese(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
+        v_mese = valori[16][1] if len(valori) > 16 and len(valori[16]) > 1 else "0"
+        s_mese = valori[16][3] if len(valori) > 16 and len(valori[16]) > 3 else "0"
+        i_mese = valori[16][5] if len(valori) > 16 and len(valori[16]) > 5 else "0"
+
         await update.message.reply_text(
             f"📆 **Dati Mensili**\n\n"
-            f"• Vendite Mese: {valori[16][1]}€\n"
-            f"• Spese Mese: {valori[16][3]}€\n"
-            f"• Investimenti Mese: {valori[16][5]}€"
+            f"• Vendite Mese: {v_mese}€\n"
+            f"• Spese Mese: {s_mese}€\n"
+            f"• Investimenti Mese: {i_mese}€"
         )
     except Exception as e:
-        await update.message.reply_text(f"❌ Errore: {str(e)}")
+        await update.message.reply_text(f"❌ Errore Mese: {str(e)}")
 
 
 if __name__ == '__main__':
@@ -149,7 +158,6 @@ if __name__ == '__main__':
         app.add_handler(CommandHandler("analisi", analisi))
         app.add_handler(CommandHandler("settimana", settimana))
         app.add_handler(CommandHandler("mese", mese))
-        app.add_handler(CommandHandler("debug", debug_dashboard))
         
         print("🤖 Bot avviato correttamente!")
         app.run_polling()
