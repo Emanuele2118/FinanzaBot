@@ -58,7 +58,7 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- NUOVI COMANDI DEDICATI ---
+# --- COMANDI DASHBOARD ---
 
 async def bilancio(update, context):
     try:
@@ -66,7 +66,6 @@ async def bilancio(update, context):
         uscite = sheet_dashboard.acell('B7').value
         saldo = sheet_dashboard.acell('B10').value
         
-        # Calcolo opzionale sfizi
         try:
             sfizi = float(saldo.replace(',', '.')) * 0.30
         except:
