@@ -53,13 +53,13 @@ async def spesa(update, context):
 async def vendita(update, context): 
     await registra(update, context, "Vendita")
 
-# --- COMANDI DASHBOARD CORRETTI ---
+# --- COMANDI DASHBOARD ---
 
 async def bilancio(update, context):
     try:
         valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
         
-        # Colonna A (indice 0): A4, A7, A10
+        # Colonna A: A4 (Guadagno), A7 (Uscite), A10 (Saldo)
         guadagno = valori[3][0] if len(valori) > 3 and len(valori[3]) > 0 else "0"
         uscite = valori[6][0] if len(valori) > 6 and len(valori[6]) > 0 else "0"
         saldo = valori[9][0] if len(valori) > 9 and len(valori[9]) > 0 else "0"
@@ -98,11 +98,9 @@ async def performance(update, context):
 
 async def analisi(update, context):
     try:
-        valori = sheet_dashboard.get_all_values(value_render_option='FORMATTED_VALUE')
-        
-        # Colonna H (indice 7): H4 e H7
-        tasso = valori[3][7] if len(valori) > 3 and len(valori[3]) > 7 else "N/D"
-        netto = valori[6][7] if len(valori) > 6 and len(valori[6]) > 7 else "N/D"
+        # Lettura mirata delle celle H4 (Tasso di Efficienza) e H7 (Guadagno Netto)
+        tasso = sheet_dashboard.acell('H4', value_render_option='FORMATTED_VALUE').value
+        netto = sheet_dashboard.acell('H7', value_render_option='FORMATTED_VALUE').value
 
         await update.message.reply_text(
             f"🔍 **Analisi**\n\n"
